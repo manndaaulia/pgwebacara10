@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WebGIS with Bootstrap, Leaflet and GeoServer</title>
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+
+<style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100%; height: 100vh; }
+
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        z-index: 9999;
+        border-right: 2px solid #ddd;
+        overflow-y: auto;
+        padding: 15px;
+    }
+
+    .map-container {
+        margin-left: 280px;
+        height: 100vh;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h4 class="text-primary">Layer Control</h4>
+    <p class="text-muted">Aktifkan layer untuk ditampilkan:</p>
+
+    <div class="form-check">
+        <input class="form-check-input layer-toggle" type="checkbox" id="desa-checkbox" data-layer="desa">
+        <label class="form-check-label">Administrasi Desa</label>
+    </div>
+
+    <div class="form-check">
+        <input class="form-check-input layer-toggle" type="checkbox" id="jalan-checkbox" data-layer="jalan">
+        <label class="form-check-label">Jalan</label>
+    </div>
+
+    <div class="form-check">
+        <input class="form-check-input layer-toggle" type="checkbox" id="bangunan-checkbox" data-layer="bangunan">
+        <label class="form-check-label">Bangunan</label>
+    </div>
+
+    <hr>
+    <button class="btn btn-primary w-100" onclick="map.locate({setView:true,maxZoom:16})">
+        Temukan Lokasi Saya
+    </button>
+</div>
+
+<!-- Map Area -->
+<div class="map-container">
+    <div id="map"></div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// INIT MAP
+var map = L.map("map").setView([-7.732521, 110.402376], 11);
+
+var osm = L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 19, attribution: "© OpenStreetMap contributors" }
+).addTo(map);
+
+// GEOSERVER WMS LAYERS
+var layers = {
+    desa: L.tileLayer.wms("http://localhost:8080/geoserver/ADMINISTRASIDESA_AR_25K/wms", {
+        layers: "pgweb10:ADMINISTRASIDESA_AR_25K",
+        format: "image/png",
+        transparent: true
+    }),
+
+    jalan: L.tileLayer.wms("http://localhost:8080/geoserver/ADMINISTRASIDESA_AR_25K/wms", {
+        layers: "pgweb10:ADMINISTRASI_LN_25K",
+        format: "image/png",
+        transparent: true
+    }),
+
+    bangunan: L.tileLayer.wms("http://localhost:8080/geoserver/ADMINISTRASIDESA_AR_25K/wms", {
+        layers: "pgweb10:BANGUNAN_PT_25K",
+        format: "image/png",
+        transparent: true
+    })
+};
+
+// ===============================
+// SIDEBAR CHECKBOX CONTROL
+// ===============================
+document.querySelectorAll(".layer-toggle").forEach(item => {
+    item.addEventListener("change", function(){
+        let layerName = this.dataset.layer;
+
+        if(this.checked){
+            map.addLayer(layers[layerName]);
+        } else {
+            map.removeLayer(layers[layerName]);
+        }
+    });
+});
+
+// ===============================
+// LOCATE USER (Optional)
+// ===============================
+map.on("locationfound", function(e){
+    L.marker(e.latlng).addTo(map).bindPopup("Lokasi Anda di sini.");
+});
+
+</script>
+</body>
+</html>
